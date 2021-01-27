@@ -134,9 +134,12 @@ func Run(logger *zap.Logger) {
 	mux.HandleFunc("/readniess-healthz", readinessHandler)
 
 	logger.Info("fetcher ready to receive requests")
-	http.ListenAndServe(":8000", &ochttp.Handler{
+	err = http.ListenAndServe(":8000", &ochttp.Handler{
 		Handler: mux,
 	})
+	if err != nil {
+		logger.Fatal("fetcher failed to listen", zap.Error(err))
+	}
 }
 
 func fetcherUsage() {

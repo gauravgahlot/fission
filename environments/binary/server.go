@@ -47,7 +47,7 @@ type (
 func (bs *BinaryServer) SpecializeHandler(w http.ResponseWriter, r *http.Request) {
 	if specialized {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Not a generic container"))
+		w.Write([]byte("Not a generic container")) //nolint: errCheck
 		return
 	}
 
@@ -78,7 +78,7 @@ func (bs *BinaryServer) SpecializeHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		if os.IsNotExist(err) {
 			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte(codePath + ": not found"))
+			w.Write([]byte(codePath + ": not found")) //nolint: errCheck
 			return
 		} else {
 			panic(err)
@@ -91,13 +91,13 @@ func (bs *BinaryServer) SpecializeHandler(w http.ResponseWriter, r *http.Request
 	userFunc, err := ioutil.ReadFile(codePath)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to read executable."))
+		w.Write([]byte("Failed to read executable.")) //nolint: errCheck
 		return
 	}
 	err = ioutil.WriteFile(bs.internalCodePath, userFunc, 0555)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Failed to write executable to target location."))
+		w.Write([]byte("Failed to write executable to target location.")) //nolint: errCheck
 		return
 	}
 
@@ -109,7 +109,7 @@ func (bs *BinaryServer) SpecializeHandler(w http.ResponseWriter, r *http.Request
 func (bs *BinaryServer) InvocationHandler(w http.ResponseWriter, r *http.Request) {
 	if !specialized {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Generic container: no requests supported"))
+		w.Write([]byte("Generic container: no requests supported")) //nolint: errCheck
 		return
 	}
 
@@ -132,13 +132,13 @@ func (bs *BinaryServer) InvocationHandler(w http.ResponseWriter, r *http.Request
 		stdin, err := cmd.StdinPipe()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(fmt.Sprintf("Failed to get STDIN pipe: %s", err)))
+			w.Write([]byte(fmt.Sprintf("Failed to get STDIN pipe: %s", err))) //nolint: errCheck
 			panic(err)
 		}
 		_, err = io.Copy(stdin, r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(fmt.Sprintf("Failed to pipe input: %s", err)))
+			w.Write([]byte(fmt.Sprintf("Failed to pipe input: %s", err))) //nolint: errCheck
 		}
 		stdin.Close()
 	}
@@ -146,12 +146,12 @@ func (bs *BinaryServer) InvocationHandler(w http.ResponseWriter, r *http.Request
 	out, err := cmd.Output()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(fmt.Sprintf("Function error: %s", err)))
+		w.Write([]byte(fmt.Sprintf("Function error: %s", err))) //nolint: errCheck
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(out)
+	w.Write(out) //nolint: errCheck
 }
 
 func main() {

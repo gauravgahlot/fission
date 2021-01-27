@@ -62,7 +62,7 @@ func specializeHandlerV2(logger *zap.Logger) func(http.ResponseWriter, *http.Req
 	return func(w http.ResponseWriter, r *http.Request) {
 		if specialized {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Not a generic container"))
+			w.Write([]byte("Not a generic container")) //nolint: errCheck
 			return
 		}
 
@@ -104,13 +104,13 @@ func specializeHandlerV2(logger *zap.Logger) func(http.ResponseWriter, *http.Req
 			msg := "error getting absolute path of model"
 			logger.Error(msg, zap.Error(err))
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			w.Write([]byte(err.Error())) //nolint: errCheck
 			return
 		} else if !strings.HasPrefix(basePath, loadreq.FilePath) {
 			msg := "incorrect model base path"
 			logger.Error(msg, zap.String("model_base_path", basePath))
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(msg))
+			w.Write([]byte(msg)) //nolint: errCheck
 			return
 		}
 
@@ -146,7 +146,7 @@ func specializeHandlerV2(logger *zap.Logger) func(http.ResponseWriter, *http.Req
 			logger.Error(msg, zap.Error(err))
 			err = errors.Wrap(err, msg)
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
+			w.Write([]byte(err.Error())) //nolint: errCheck
 			return
 		}
 
@@ -197,7 +197,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("can't initialize zap logger: %v", err)
 	}
-	defer logger.Sync()
+	defer func() {
+		err := logger.Sync()
+		if err != nil {
+			log.Fatalf("failed to sync zap logger: %v", err)
+		}
+	}()
 
 	http.HandleFunc("/healthz", readinessProbeHandler)
 	http.HandleFunc("/specialize", specializeHandler(logger.Named("specialize_handler")))
@@ -207,7 +212,7 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if !specialized {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Generic container: no requests supported"))
+			w.Write([]byte("Generic container: no requests supported")) //nolint: errCheck
 			return
 		}
 
@@ -227,5 +232,8 @@ func main() {
 	})
 
 	logger.Info("listening on 8888 ...")
-	http.ListenAndServe(":8888", nil)
+	err = http.ListenAndServe(":8888", nil)
+	if err != nil {
+		logger.Error("failed to listen at :8888", zap.Error(err))
+	}
 }

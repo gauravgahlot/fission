@@ -181,7 +181,10 @@ func main() {
 	// certain kinds of API errors getting logged into a directory not
 	// available in a `FROM scratch` Docker container, causing glog to abort
 	// hard with an exit code > 0.
-	flag.Set("logtostderr", "true")
+	err := flag.Set("logtostderr", "true")
+	if err != nil {
+		log.Fatalf("failed to set flag \"logtostderr\": %v", err)
+	}
 
 	usage := `fission-bundle: Package of all fission microservices: controller, router, executor.
 
@@ -236,7 +239,6 @@ Options:
 `
 
 	var logger *zap.Logger
-	var err error
 	var config zap.Config
 
 	isDebugEnv, _ := strconv.ParseBool(os.Getenv("DEBUG_ENV"))
@@ -253,7 +255,12 @@ Options:
 	if err != nil {
 		log.Fatalf("I can't initialize zap logger: %v", err)
 	}
-	defer logger.Sync()
+	defer func() {
+		err := logger.Sync()
+		if err != nil {
+			log.Fatalf("failed to sync zap logger: %v", err)
+		}
+	}()
 
 	version := fmt.Sprintf("Fission Bundle Version: %v", info.BuildInfo().String())
 	arguments, err := docopt.Parse(usage, nil, true, version, false)
